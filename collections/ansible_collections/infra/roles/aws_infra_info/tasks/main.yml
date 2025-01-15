@@ -1,0 +1,44 @@
+---
+- name: retrieve vpc ID                 
+  amazon.aws.ec2_vpc_net_info:
+    profile: "{{ aws_profile | default('default') }}"
+    filters:
+      "tag:demo": Ansible
+  register: vpc_info 
+
+- name: retrieve vpc subnet info 
+  amazon.aws.ec2_vpc_subnet_info:
+    profile: "{{ aws_profile | default('default') }}"
+    filters:
+      "tag:demo": Ansible
+  register: vpc_subnet_info
+
+- name: retrieve vpc route table id 
+  amazon.aws.ec2_vpc_route_table_info:
+    profile: "{{ aws_profile | default('default') }}"
+    filters:
+      "tag:demo": Ansible
+  register: vpc_route_info
+
+- name: Retrieve Security Group info 
+  amazon.aws.ec2_group_info:
+    profile: "{{ aws_profile | default('default') }}"
+    filters:
+      "tag:demo": Ansible
+  register: sec_info
+
+- name: Retrieve Internet Gateways info
+  amazon.aws.ec2_vpc_igw_info:
+    profile: "{{ aws_profile | default('default') }}"
+    filters:
+      "tag:demo": Ansible
+  register: igw_info
+
+- name: Setup Variables for instance maintenance
+  ansible.builtin.set_fact:
+    vpc_id: "{{ vpc_info.vpcs[0].vpc_id }}"
+    vpc_route_id: "{{ vpc_route_info.route_tables[0].id }}"
+    vpc_subnet_id: "{{ vpc_subnet_info.subnets[0].subnet_id }}"
+    igw_id: "{{ igw_info.internet_gateways[0].internet_gateway_id }}"
+    sec_grp_name: "{{ sec_info.security_groups[0].group_name }}"
+  when: (vpc_info.vpcs | length) > 0

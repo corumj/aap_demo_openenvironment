@@ -1,0 +1,19 @@
+--- 
+rh_username: username
+rh_password: password
+
+certificate_env: staging # staging or prod, only switch to prod when you've confirmed your setup works
+cert_email: <your@email>
+certificate_force: false # only set to true for troubleshooting, better to delete and start over 
+
+archive_version: 2.5-7
+unarchived_name: ansible-automation-platform-containerized-setup-bundle-{{ archive_version }}-x86_64 
+# this needs to match the SHA on the current downloads page for AAP
+download_sha: 320d18ecc8ae71aa9d2883e76f7ced1f383efe3b76b27c1662a815575ef30511  
+
+admin_password: redhat123! 
+
+pg_password: redhat123 
+
+# aap_installer_files: ansible-automation-platform-containerized-setup-2.4-2.tar.gz
+rh_offline_token: "<RH API offline token - generate here: https://access.redhat.com/articles/3626371>"

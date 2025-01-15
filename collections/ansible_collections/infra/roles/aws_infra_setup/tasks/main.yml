@@ -1,0 +1,106 @@
+---
+- name: create a VPC 
+  amazon.aws.ec2_vpc_net:
+    profile: "{{ aws_profile | default('default') }}"
+    state: present
+    name: "ansible-vpc"
+    cidr_block: 10.0.0.0/16
+    tenancy: default
+    tags:
+      demo: Ansible 
+  register: vpc_info
+
+- name: Save VPC ID
+  ansible.builtin.set_fact:
+    vpc_id: "{{ vpc_info.vpc.id }}"
+
+- name: Create Internet Gateway for VPC  
+  community.aws.ec2_vpc_igw:
+    profile: "{{ aws_profile | default('default') }}"
+    state: present
+    vpc_id: "{{ vpc_id }}"
+    tags:
+      Name: "ansible-vpc-igw"
+      demo: Ansible 
+  register: igw_info
+
+- name: Save IGW ID
+  ansible.builtin.set_fact:
+    igw_id: "{{ igw_info.gateway_id }}"
+
+- name: Create security group
+  amazon.aws.ec2_group: 
+    profile: "{{ aws_profile | default('default') }}"
+    state: present
+    name: "ansible-sec-group"
+    description: Inbound WinRM and RDP, http for demo servers and internal AD ports 
+    rules: "{{ aap_infrastructure_aws.security_group_rules }}"
+    rules_egress:
+      - proto: -1 
+        cidr_ip: 0.0.0.0/0
+    vpc_id: "{{ vpc_id }}"
+    tags:
+      Name: "ansible-sec-group"
+      demo: Ansible 
+  register: sec_info
+
+- name: Save Security Group Name
+  ansible.builtin.set_fact:
+    sec_grp_name: "{{ sec_info.group_name }}"
+
+- name: Create a subnet on the VPC for our apps
+  amazon.aws.ec2_vpc_subnet:
+    profile: "{{ aws_profile | default('default') }}"
+    state: present
+    vpc_id: "{{ vpc_id }}"
+    cidr: 10.0.0.0/16
+    az: us-east-2b
+    map_public: yes
+    tags:
+      Name: "ansible-subnet"
+      demo: Ansible 
+  register: vpc_subnet_info
+
+- name: Save Subnet ID
+  ansible.builtin.set_fact:
+    vpc_subnet_id: "{{ vpc_subnet_info.subnet.id }}"
+
+# - name: Create a subnet on the VPC in a second availability zone
+#   amazon.aws.ec2_vpc_subnet:
+#     profile: "{{ aws_profile }}"
+#     state: present
+#     vpc_id: "{{ vpc_id }}"
+#     cidr: 10.0.0.0/16
+#     az: us-east-2a
+#     map_public: yes
+#     tags:
+#       Name: "ansible-subnet-2"
+#       demo: Ansible 
+#   register: vpc_subnet2_info
+
+- name: Create a subnet route table 
+  amazon.aws.ec2_vpc_route_table:
+    profile: "{{ aws_profile | default('default') }}"
+    state: present 
+    vpc_id: "{{ vpc_id }}"
+    subnets:
+      - "{{ vpc_subnet_id }}"
+#      - "{{ vpc_subnet_info.subnet.id }}"
+    routes:
+      - dest: 0.0.0.0/0 
+        gateway_id: "{{ igw_id }}"
+    tags: 
+      Name: "ansible-vpc-rtbl"
+      demo: Ansible 
+  register: vpc_route_info
+    
+- name: Save VPC Route ID
+  ansible.builtin.set_fact:
+    vpc_route_id: "{{ vpc_route_info.route_table.id }}"
+
+- name: Generate AWS Keypair 
+  amazon.aws.ec2_key: 
+    profile: "{{ aws_profile | default('default') }}"
+    name: "ansible-demo-key"
+    key_material: "{{ public_key }}"
+    state: present

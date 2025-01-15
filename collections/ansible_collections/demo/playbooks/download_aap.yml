@@ -1,0 +1,11 @@
+---
+- name: Download Containerized AAP Installer 
+  hosts: "{{ target | default(groups['aap'][0]) }}"
+
+  vars: 
+    offline_token: "{{ rh_offline_token }}"
+    provided_sha_value: "{{ to_download }}"
+  tasks:
+    - name: Download Containerized AAP 
+      ansible.builtin.include_role: 
+        name: usspacenut.demo.aap_download

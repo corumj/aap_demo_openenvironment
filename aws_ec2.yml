@@ -1,0 +1,20 @@
+plugin: aws_ec2
+cache: True 
+boto_profile: default 
+
+regions:
+  - us-east-2
+
+filters:
+  tag:demo: Ansible
+
+hostnames:
+  - dns-name
+
+compose: 
+  private_dns_name: private-dns-name 
+  
+keyed_groups:
+  - key: 'tags.group_name'
+    prefix: ""
+    separator: ""

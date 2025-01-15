@@ -1,0 +1,76 @@
+--- 
+- name: Prep hosts for containerized install 
+  hosts: localhost 
+  vars_files:
+    - config.yml 
+
+  vars: 
+    demo_inst_qty: 3
+
+  tasks:
+
+    - name: Setup aws infra 
+      ansible.builtin.include_role: 
+        name: usspacenut.infra.aws_infra_setup
+
+    - name: retrieve infra ids 
+      ansible.builtin.include_role:
+        name: usspacenut.infra.aws_infra_info
+
+    - name: Find AMI for Linux Host
+      amazon.aws.ec2_ami_info:
+        profile: "{{ aws_profile | default('default') }}"
+        owners: 309956199498
+        filters:
+          name: 'RHEL-9*HVM-*Hourly*'
+          architecture: x86_64
+      register: amis
+
+    - name: save ami for rhel node
+      set_fact:
+        node_ami_rhel: >
+          {{ amis.images | selectattr('name', 'defined') | sort(attribute='name') | last }}
+
+    - name: Provision AAP EC2 Instances 
+      amazon.aws.ec2_instance: 
+        profile: "{{ aws_profile | default('default') }}"
+        state: started
+        name: "containerized_aap"
+        security_group: "{{ sec_info.security_groups[0].group_name }}"
+        vpc_subnet_id: "{{ vpc_subnet_info.subnets[0].subnet_id }}"
+        image_id: "{{ node_ami_rhel.image_id }}"
+        instance_type: "t2.xlarge"
+        exact_count: "{{ demo_inst_qty | default(1) }}"
+        key_name: "ansible-demo-key"
+        volumes:
+          - device_name: /dev/sda1 
+            ebs:
+              volume_size: 40 
+              delete_on_termination: true 
+        tags: 
+          group_name: "aap"
+          short_desc: "containerizedaap"
+          demo: Ansible 
+        wait: yes
+      async: 3000
+      poll: 30
+
+    - name: Force inventory refresh 
+      ansible.builtin.meta: refresh_inventory 
+
+- name: Prepare host for AAP
+  hosts: aap 
+  become: yes 
+  vars_files:
+    - config.yml 
+
+  tasks:
+    - name: Register servers to RHSM 
+      include_role:
+        name: usspacenut.demo.rhsm 
+        tasks_from: register.yml
+
+    - name: Run updates 
+      ansible.builtin.dnf:  
+        name: '*'
+        state: latest 

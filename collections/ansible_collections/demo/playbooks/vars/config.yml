@@ -1,0 +1,89 @@
+---
+# change these lookups to whichever SSH key you want to use to connect to the instances from your control host
+public_key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"  
+private_key: "{{ lookup('file', '~/.ssh/id_rsa') }}"  
+
+# This lets you use the staging env and swap to prod once you've customized to your env
+# this makes the API gods happier
+acme_env: 
+  staging: https://acme-staging-v02.api.letsencrypt.org/directory
+  prod: https://acme-v02.api.letsencrypt.org/directory
+
+# This will let you install a minimal AAP cluster with a hybrid control node
+# or show a full automation mesh
+demo_setup:
+  minimal: "minimal"
+  mesh: "mesh" 
+
+# This template is read in and instances are created during setup
+# running the role aap_instances. 
+aap_infrastructure_aws:
+  containerized:
+    instances:
+      - name: "aap-containerized"
+        count: 1
+        instance_type: "t2.xlarge"
+  minimal: 
+    instances:
+      - name: "aap-minimal"
+        count: 3
+        instance_type: "t2.xlarge"
+
+# Defined AWS security group rules here.  These have evolved over time as I've 
+# added ports for various demos.
+####  NEED  to create an update security group playbook ####
+  security_group_rules:
+    - proto: tcp 
+      ports:
+        - 80 # HTTP
+        - 443 # HTTPS
+        - 22 # SSH 
+        # - 9092 # Kafka default port
+        # - 8200 # splunk HEC port  
+        # - 8000 # splunk demo 
+        # - 8089 # splunk admin port for setting up HEC
+        # - 5000 # EDA Webhook 
+        # - 5001 # EDA Alert Manager Webhook
+        # - 27199 # Receptor port for Automation Mesh 
+        - 5432 # PostgreSQL
+        - 8443 # Controller for single instance Containerized AAP
+        - 8444 # PAH for single instance Containerized AAP
+        - 8445 # EDA for single instance Containerized AAP
+        - 8446 # Gateway API 
+      cidr_ip: 0.0.0.0/0
+    - proto: icmp
+      to_port: -1
+      from_port: -1
+      cidr_ip: 0.0.0.0/0
+    - proto: tcp
+      ports: 
+        - 80
+        - 5986 # WinRM
+        - 3389 # RDP
+        - 53 # DNS
+        - 88 # Kerberos Authentication
+        - 135 # RPC
+        - 139 # Netlogon 
+        - 389 # LDAP 
+        - 445 # SMB
+        - 464 # Kerberos Authentication
+        - 5432 # PostgreSQL
+        - 636 # LDAPS (LDAP over TLS)
+        - 873 # Rsync 
+        - 27199 # Ansible Default Receptor Port 
+        - 3268-3269 # Global Catalog 
+        - 1024-65535 # Ephemeral RPC ports
+      cidr_ip: 10.0.0.0/16
+    - proto: udp 
+      ports: 
+        - 53 # DNS
+        - 88 # Kerberos Authentication
+        - 123 # NTP
+        - 137-138 # Netlogon 
+        - 389 # LDAP 
+        - 445 # SMB
+        - 464 # Kerberos Authentication
+        - 1024-65535 # Ephemeral RPC ports
+      cidr_ip: 10.0.0.0/16
+
+

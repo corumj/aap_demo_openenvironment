@@ -1,0 +1,75 @@
+# This is the AAP growth installer inventory file
+# Please consult the docs if you're unsure what to add
+# For all optional variables please consult the included README.md
+# or the Red Hat documentation:
+# https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/containerized_installation
+
+# This section is for your AAP Gateway host(s)
+# -----------------------------------------------------
+[automationgateway]
+# {{ ansible_fqdn }} ansible_connection=local
+gateway.{{ top_level_domain }} ansible_connection=local
+
+# This section is for your AAP Controller host(s)
+# -----------------------------------------------------
+[automationcontroller]
+gateway.{{ top_level_domain }} ansible_connection=local
+
+# This section is for your AAP Automation Hub host(s)
+# -----------------------------------------------------
+[automationhub]
+gateway.{{ top_level_domain }} ansible_connection=local
+
+# This section is for your AAP EDA Controller host(s)
+# -----------------------------------------------------
+[automationeda]
+gateway.{{ top_level_domain }} ansible_connection=local
+
+# This section is for the AAP database
+# -----------------------------------------------------
+[database]
+gateway.{{ top_level_domain }} ansible_connection=local
+
+[all:vars]
+
+# Common variables
+# https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/containerized_installation/appendix-inventory-files-vars#ref-general-inventory-variables
+# -----------------------------------------------------
+postgresql_admin_username=postgres
+postgresql_admin_password={{ pg_password }}
+
+bundle_install=true
+# The bundle directory must include /bundle in the path
+bundle_dir='/home/ec2-user/{{ unarchived_name }}/bundle'
+
+redis_mode=standalone
+
+# AAP Gateway
+# https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/containerized_installation/appendix-inventory-files-vars#ref-gateway-variables
+# -----------------------------------------------------
+gateway_admin_password={{ admin_password }}
+gateway_pg_host=gateway.{{ top_level_domain }}
+gateway_pg_password={{ pg_password }}
+gateway_tls_cert=/home/ec2-user/.certs/gateway.{{ top_level_domain}}_chain
+gateway_tls_key=/home/ec2-user/.certs/cert_key  
+
+# AAP Controller
+# https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/containerized_installation/appendix-inventory-files-vars#ref-controller-variables
+# -----------------------------------------------------
+controller_admin_password={{ admin_password }}
+controller_pg_host=gateway.{{ top_level_domain }}
+controller_pg_password={{ pg_password }}
+
+# AAP Automation Hub
+# https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/containerized_installation/appendix-inventory-files-vars#ref-hub-variables
+# -----------------------------------------------------
+hub_admin_password={{ admin_password }}
+hub_pg_host=gateway.{{ top_level_domain }}
+hub_pg_password={{ pg_password }}
+
+# AAP EDA Controller
+# https://docs.redhat.com/en/documentation/red_hat_ansible_automation_platform/2.5/html/containerized_installation/appendix-inventory-files-vars#event-driven-ansible-controller
+# -----------------------------------------------------
+eda_admin_password={{ admin_password }}
+eda_pg_host=gateway.{{ top_level_domain }} 
+eda_pg_password={{ pg_password }}

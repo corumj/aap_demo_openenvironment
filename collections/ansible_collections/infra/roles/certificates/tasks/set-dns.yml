@@ -1,0 +1,42 @@
+---
+- name: Setup Route 53 for controller domain name 
+  amazon.aws.route53:
+    profile: "{{ aws_profile }}"
+    state: present 
+    zone: "{{ top_level_domain }}"
+    record: "{{ controller_dns }}"
+    type: A
+    value: "{{ hostvars[groups['controller'][0]]['public_ip_address'] }}"
+    ttl: 300
+    wait: yes
+    identifier: "{{ controller_dns }}"
+    region: "{{ aws_region }}"
+    overwrite: yes
+
+- name: Setup Route 53 for Automation Hub domain name 
+  amazon.aws.route53:
+    profile: "{{ aws_profile }}"
+    state: present 
+    zone: "{{ top_level_domain }}"
+    record: "{{ hub_dns }}"
+    type: A
+    value: "{{ hostvars[groups['hub'][0]]['public_ip_address'] }}"
+    ttl: 300
+    wait: yes
+    identifier: "{{ hub_dns }}"
+    region: "{{ aws_region }}"
+    overwrite: yes
+
+- name: Setup Route 53 for EDA Controller domain name 
+  amazon.aws.route53:
+    profile: "{{ aws_profile }}"
+    state: present 
+    zone: "{{ top_level_domain }}"
+    record: "{{ eda_dns }}"
+    type: A
+    value: "{{ hostvars[groups['eda'][0]]['public_ip_address'] }}"
+    ttl: 300
+    wait: yes
+    identifier: "{{ eda_dns }}"
+    region: "{{ aws_region }}"
+    overwrite: yes

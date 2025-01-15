@@ -1,0 +1,91 @@
+--- 
+- name: create directory for certs 
+  ansible.builtin.file:
+    path: /home/ec2-user/.certs 
+    state: directory 
+  register: certs_path 
+
+- name: Generate acme account key 
+  openssl_privatekey:
+    path: "{{ acme_account_key_path }}"
+
+- name: Generate certificate private key 
+  openssl_privatekey:
+    path: "{{ acme_private_key_path }}"
+    size: 2048 
+
+- name: Create a CSR for Gateway
+  openssl_csr:
+    path: "{{ gateway_csr_path }}"
+    privatekey_path: "{{ acme_private_key_path }}"
+    common_name: "{{ gateway_dns }}"
+
+- name: Create DNS Challenge for Gateway
+  acme_certificate:
+    account_key_src: "{{ acme_account_key_path }}"
+    account_email: "{{ cert_email }}"
+    csr: "{{ gateway_csr_path }}"
+    dest: "/home/ec2-user/.certs/gateway"
+    challenge: dns-01 
+    acme_directory: "{{ acme_env[certificate_env] }}"
+    acme_version: 2 
+    terms_agreed: yes 
+    remaining_days: 10 
+    force: "{{ certificate_force }}"
+  register: gateway_dns_challenge 
+
+- name: set Gateway challenge_record facts
+  set_fact:
+    gateway_challenge_record: "{{ gateway_dns_challenge.challenge_data[gateway_dns]['dns-01'].record }}"
+    gateway_challenge_value: "{{ gateway_dns_challenge.challenge_data[gateway_dns]['dns-01'].resource_value | regex_replace('^(.*)$', '\"\\1\"') }}"
+  when: 
+    - gateway_dns_challenge is changed 
+    - gateway_dns_challenge.challenge_data[gateway_dns] is defined
+
+- name: Setup gateway dns check for acme challenge 
+  community.aws.route53:
+    profile: "{{ aws_profile | default('default') }}"
+    state: present 
+    zone: "{{ top_level_domain }}"
+    record: "{{ gateway_challenge_record }}"
+    type: TXT
+    value: "{{ gateway_challenge_value }}"
+    ttl: 60
+    wait: yes
+    overwrite: yes
+  when: 
+    - gateway_dns_challenge is changed 
+    - gateway_dns_challenge.challenge_data[gateway_dns] is defined
+  delegate_to: localhost 
+
+- name: Validate Gateway DNS Challenge 
+  acme_certificate:
+    account_key_src: "{{ acme_account_key_path }}"
+    account_email: "{{ cert_email }}"
+    csr: "{{ gateway_csr_path }}"
+    dest: "/home/ec2-user/.certs/gateway"
+    fullchain_dest: "/home/ec2-user/.certs/gateway.{{ top_level_domain}}_chain"
+    challenge: dns-01 
+    acme_directory: "{{ acme_env[certificate_env] }}"
+    acme_version: 2 
+    terms_agreed: yes 
+    remaining_days: 10 
+    data: "{{ gateway_dns_challenge }}"
+    force: "{{ certificate_force }}"
+  register: gateway_cert_valid
+  when: 
+    - gateway_dns_challenge is changed 
+    - gateway_dns_challenge.challenge_data[gateway_dns] is defined
+
+- name: Setup Route 53 for gateway domain name 
+  community.aws.route53:
+    profile: "{{ aws_profile | default('default') }}"
+    state: present 
+    zone: "{{ top_level_domain }}"
+    record: "{{ gateway_dns }}"
+    type: A
+    value: "{{ hostvars[groups['aap'][0]]['public_ip_address'] }}"
+    ttl: 300
+    wait: yes
+    overwrite: yes
+  delegate_to: localhost 

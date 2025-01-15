@@ -1,0 +1,46 @@
+--- 
+- name: Install ansible-core 
+  ansible.builtin.dnf:
+    name: ansible-core 
+    state: present 
+  become: yes 
+
+- name: Install podman version 4 
+  ansible.builtin.dnf:
+    name: podman-4:4.9.4-16.el9_4.x86_64
+    state: present 
+    allow_downgrade: True
+  become: yes  
+
+- name: set hostname 
+  ansible.builtin.hostname: 
+    name: gateway.{{ top_level_domain }}
+  become: yes 
+  
+- name: Unzip installer 
+  ansible.builtin.unarchive:
+    src: /home/ec2-user/aap.tar.gz 
+    dest: /home/ec2-user
+    remote_src: True 
+  register: installer_path
+
+- debug: 
+    var: installer_path
+
+- name: Copy templated installer inventory 
+  ansible.builtin.template:
+    src: inventory.j2 
+    dest: "/home/ec2-user/{{ unarchived_name }}/inventory"
+
+- name: Prepare DNS 
+  ansible.builtin.include_role:
+    name: usspacenut.infra.certificates 
+    tasks_from: containerized.yml 
+
+- name: Run installer playbook 
+  ansible.builtin.shell: ansible-playbook -i inventory ansible.containerized_installer.install 
+  args:
+    chdir: /home/ec2-user/{{ unarchived_name }}
+  async: 4800
+  poll: 60
+  # delegate_to: "{{ groups['aap'][0] }}"

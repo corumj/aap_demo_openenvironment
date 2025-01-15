@@ -1,0 +1,55 @@
+---
+- name: Check config has been provided
+  ansible.builtin.assert:
+    that:
+      - to_create is defined 
+    fail_msg:
+      - "Please make sure to pass the appropriate variables"
+      - "e.g. `to_create: minimal`, or `to_create: containerized`"
+
+# - name: retrieve infra ids 
+#   ansible.builtin.include_role:
+#     name: usspacenut.infra.aws_infra_info
+#   when: (sec_info.security_groups | length) > 0
+  
+- name: Setup aws infra 
+  ansible.builtin.include_role: 
+    name: usspacenut.infra.aws_infra_setup
+  when: sec_grp_name is not defined
+
+- name: Find AMI for Linux Host
+  amazon.aws.ec2_ami_info:
+    profile: "{{ aws_profile | default('default') }}"
+    owners: 309956199498
+    filters:
+      name: 'RHEL-9*HVM-*Hourly*'
+      architecture: x86_64
+  register: amis
+
+- name: save ami for rhel node
+  set_fact:
+    node_ami_rhel: >
+      {{ amis.images | selectattr('name', 'defined') | sort(attribute='name') | last }}
+
+- name: Provision EC2 Instances for {{ to_create.name }} 
+  amazon.aws.ec2_instance: 
+    profile: "{{ aws_profile | default('default') }}"
+    state: started
+    name: "{{ to_create.name }}"
+    security_group: "{{ sec_grp_name }}"
+    vpc_subnet_id: "{{ vpc_subnet_id }}"
+    image_id: "{{ node_ami_rhel.image_id }}"
+    instance_type: "{{ to_create.instance_type }}"
+    exact_count: "{{ to_create.count }}"
+    key_name: "ansible-demo-key"
+    volumes:
+      - device_name: /dev/sda1 
+        ebs:
+          volume_size: 60 
+          delete_on_termination: true 
+    tags: 
+      group_name: "aap"
+      demo: Ansible 
+    wait: yes
+  async: 3000
+  poll: 30

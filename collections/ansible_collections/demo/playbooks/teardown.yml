@@ -1,0 +1,102 @@
+--- 
+- name: Deregister servers from RHSM and revoke certs  
+  hosts: aap
+  gather_facts: no 
+  become: no
+
+  tasks:
+    - name: fetch dns info and set vars  
+      ansible.builtin.include_role:
+        name: usspacenut.infra.dns 
+        apply:
+          delegate_to: localhost 
+
+    - name: Revoke certificates with account key
+      community.crypto.acme_certificate_revoke:
+        account_key_src: "{{ acme_account_key_path }}"
+        certificate: "/home/ec2-user/.certs/gateway.{{ top_level_domain }}_chain"
+        acme_directory: "{{ acme_env[certificate_env] }}"
+        acme_version: 2 
+      # ignore_errors: True  
+
+
+    - name: Deregister AAP servers from RHSM 
+      ansible.builtin.include_role:
+        name: usspacenut.demo.rhsm 
+        tasks_from: unregister.yml
+        apply:
+          become: yes 
+      when: (groups['aap'] | length) > 0
+
+- name: Teardown AWS demo resources 
+  hosts: "{{ target | default('localhost') }}"
+  gather_facts: no
+
+  tasks:
+    - name: fetch dns info  
+      ansible.builtin.include_role:
+        name: usspacenut.infra.dns 
+
+    - name: fetch infra info 
+      ansible.builtin.include_role:
+        name: usspacenut.infra.aws_infra_info
+
+    # - name: Revoke TLS certificates
+    #   ansible.builtin.include_role: 
+    #     name: usspacenut.infra.certificates
+    #     tasks_from: revoke.yml
+
+    - name: Deprovision Demo EC2 Instances
+      community.aws.ec2_instance:
+        profile: "{{ aws_profile | default('default') }}"
+        state: absent
+        filters:
+          "tag:demo": Ansible 
+          instance-state-name: "*" 
+        wait: yes
+
+    - name: Remove subnet route table 
+      amazon.aws.ec2_vpc_route_table:
+        profile: "{{ aws_profile | default('default') }}"
+        vpc_id: "{{ vpc_info.vpcs[0].vpc_id }}"
+        route_table_id: "{{ vpc_route_info.route_tables[0].route_table_id }}"
+        lookup: id
+        state: absent
+      when: vpc_route_info.route_tables
+
+    - name: Remove subnets 
+      amazon.aws.ec2_vpc_subnet:
+        profile: "{{ aws_profile | default('default') }}"
+        state: absent 
+        cidr: 10.0.0.0/16
+        vpc_id: "{{ vpc_info.vpcs[0].vpc_id }}"
+      when: vpc_info.vpcs
+
+    - name: Remove security groups
+      amazon.aws.ec2_security_group: 
+        profile: "{{ aws_profile | default('default') }}"
+        state: absent
+        vpc_id: "{{ vpc_info.vpcs[0].id }}"
+        group_id: "{{ sec_info.security_groups[0].group_id }}"
+      when: sec_info.security_groups 
+
+    - name: Remove Internet gateway 
+      amazon.aws.ec2_vpc_igw:
+        profile: "{{ aws_profile | default('default') }}"
+        vpc_id: "{{ vpc_info.vpcs[0].id }}"
+        #internet_gateway_id: "{{ igw_info.internet_gateways[0].internet_gateway_id }}"
+        state: absent
+      when: igw_info.internet_gateways
+
+    - name: Remove VPC
+      amazon.aws.ec2_vpc_net:
+        profile: "{{ aws_profile | default('default') }}"
+        vpc_id: "{{ vpc_info.vpcs[0].id }}"
+        state: absent
+      when: vpc_info.vpcs
+
+    - name: Remove AWS Keypair 
+      amazon.aws.ec2_key: 
+        profile: "{{ aws_profile | default('default') }}"
+        name: "ansible-demo-key"
+        state: absent

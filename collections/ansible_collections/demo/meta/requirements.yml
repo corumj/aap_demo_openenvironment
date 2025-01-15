@@ -1,0 +1,20 @@
+--- 
+collections:
+  - name: git+https://github.com/ansible-middleware/redhat-csp-download.git
+    version: 1.2.2
+  - name: ansible.posix 
+    version: 1.4.0
+  - name: ansible.controller 
+    version: 4.5.1
+  - name: servicenow.itsm 
+    version: 1.4.0
+  - name: awx.awx 
+    version: 22.4.0 
+  - name: community.crypto 
+    version: 2.5.0 
+  - name: community.general 
+    version: 5.5.0 
+  - name: community.aws 
+    version: 3.5.0 
+  - name: community.hashi_vault 
+    version: 3.3.1

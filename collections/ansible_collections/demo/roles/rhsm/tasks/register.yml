@@ -1,0 +1,7 @@
+---    
+- name: Subscribe 
+  redhat_subscription:
+    state: present
+    username: "{{ rh_username }}"
+    password: "{{ rh_password }}"
+  become: true  

@@ -1,0 +1,10 @@
+--- 
+instances:
+  - name: aap-containerized 
+    count: 1 
+    instance_type: m5.xlarge 
+    security_group: aap 
+    tags:
+      aap: containerized 
+      demo: Ansible
+    state: present 

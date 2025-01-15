@@ -1,0 +1,8 @@
+--- 
+vpcs: 
+  - name: ansible-vpc 
+    cidr_block: 10.0.1.0/16 
+    tenancy: default 
+    tags: 
+      demo: Ansible
+    state: present 

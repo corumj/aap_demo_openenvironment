@@ -1,0 +1,46 @@
+--- 
+- name: Ensure requirements are met
+  vars:
+    target: localhost 
+  ansible.builtin.import_playbook: usspacenut.demo.preflight
+
+- name: Setup AAP Server(s)
+  hosts: localhost
+  gather_facts: False 
+
+  tasks:
+    - name: Retrieve AWS Infra info
+      ansible.builtin.import_role:
+        name: usspacenut.infra.aws_infra_info 
+        
+    - name: Provision Server(s)  
+      vars:
+        to_create: "{{ aap_infrastructure_aws[dtype].instances }}"        
+      ansible.builtin.import_role: 
+        name: usspacenut.infra.provisioner
+
+    - name: Refresh dynamic inventory
+      ansible.builtin.meta: refresh_inventory
+
+- name: Download AAP 
+  vars:
+    target: "{{ groups['aap'][0] }}"
+    to_download: "{{ download_sha }}"
+  ansible.builtin.import_playbook: usspacenut.demo.download_aap
+
+- name: Install AAP 
+  hosts: "{{ target | default(groups['aap'][0]) }}" 
+
+  tasks: 
+    - name: Get DNS info 
+      ansible.builtin.include_role: 
+        name: usspacenut.infra.dns 
+        apply:
+          delegate_to: localhost 
+
+    - name: Call installer role 
+      ansible.builtin.include_role:
+        name: usspacenut.demo.aap_install 
+
+        
+    

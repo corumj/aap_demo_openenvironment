@@ -1,0 +1,2 @@
+--- 
+top_level_domain: '{{ route53_info.hosted_zones[0].name | regex_search(".*(?=\.)") }}'

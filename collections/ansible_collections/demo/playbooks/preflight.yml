@@ -1,0 +1,45 @@
+--- 
+- name: Setup - Preflight
+  hosts: "{{ target | default('localhost') }}"
+
+  # vars_prompt: 
+  #   - name: rh_username
+  #     prompt: What is your Red Hat Customer Portal username?
+  #     private: false 
+  #   - name: rh_password 
+  #     prompt: What is your Red Hat Customer Portal password?
+  #     private: true 
+  #   - name: rh_password_verify 
+  #     prompt: Enter your Red Hat Customer Portal password again to verify.
+  #     private: true   
+  #   - name: rh_offline_token
+  #     promt: Enter a valid Red Hat CP API offline token
+  #     private: true 
+         
+  tasks:
+    - name: Verify AWS Credentials 
+      amazon.aws.aws_caller_info:
+      register: caller_info
+      failed_when: False 
+
+    - debug: 
+        var: caller_info 
+        verbosity: 1
+
+    - name: Verify AWS Access  
+      ansible.builtin.assert:
+        that: 
+          - "caller_info.account_alias"
+          - "'admin' in caller_info.arn"
+        fail_msg: "Please ensure `~/.aws/credentials` is correctly configured and that you have admin priviledges"
+        quiet: True 
+
+    - name: Verify extra_vars config  
+      ansible.builtin.assert:
+        that: 
+          - rh_username is defined 
+          - rh_password is defined 
+          - rh_offline_token is defined
+        fail_msg: 
+          - "Please create an extra_vars file following the readme for this collection:"
+        quiet: True 

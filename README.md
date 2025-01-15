@@ -10,3 +10,5 @@
 - Build and install the two collections, infra and demo.  In each folder -
     - `ansible-galaxy collection build .`
     - `ansible-galaxy collection install <whatever the name of the tar.gz build creates>`
+
+    Run it with `ansible-playbook -i aws_ec2.yml -e @extra_vars.yml usspacenut.demo.bootstrap`

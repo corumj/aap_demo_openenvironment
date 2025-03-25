@@ -16,6 +16,14 @@ provider "aws" {
 # data "aws_vpc" "ansible-vpc" {
 #   default = true
 # }
+resource "aws_vpc" "ansible-vpc" {
+  cidr_block       = "10.0.0.0/16"
+  instance_tenancy = "default"
+
+  tags = {
+    Name = "ansible"
+  }
+}
 
 resource "aws_instance" "tf-demo-aws-ec2-instance-1" {
   ami           = "ami-0005e0cfe09cc9050"

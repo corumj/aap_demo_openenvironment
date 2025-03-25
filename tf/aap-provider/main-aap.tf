@@ -43,7 +43,7 @@ resource "aws_network_interface" "foo2" {
 }
 
 resource "aws_instance" "tf-demo-aws-ec2-instance-2" {
-  ami           = "ami-0005e0cfe09cc9050"
+  ami           = "ami-0f6c1051253397fef"
   instance_type = "t2.micro"
   tags = {
     Name = "tf-demo-aws-ec2-instance-2"

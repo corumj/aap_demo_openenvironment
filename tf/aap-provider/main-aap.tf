@@ -35,7 +35,7 @@ resource "aws_subnet" "aap_subnet" {
 
 resource "aws_network_interface" "foo2" {
   subnet_id   = aws_subnet.aap_subnet.id
-  private_ips = ["172.16.10.100"]
+  private_ips = ["172.16.10.105"]
 
   tags = {
     Name = "primary_network_interface2"

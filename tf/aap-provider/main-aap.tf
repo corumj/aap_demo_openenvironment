@@ -57,8 +57,8 @@ resource "aws_instance" "tf-demo-aws-ec2-instance-2" {
     cpu_credits = "unlimited"
   }
 
-  }
 }
+
 
 provider "aap" {
   host     = "https://gateway.sandbox3281.opentlc.com/"

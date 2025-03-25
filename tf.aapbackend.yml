@@ -5,6 +5,7 @@
     - name: "Terraform state: {{ requested_state }}"
       cloud.terraform.terraform:
         project_path: tf/aap-provider/
+        plan_file: tf/aap-provider-plan
         state: "{{ requested_state }}"
         force_init: true
         backend_config_files:

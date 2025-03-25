@@ -2,10 +2,16 @@
 - name: Deploy resources via Terraform
   hosts: localhost
   tasks:
+    - name: Create temporary directory for plan
+      ansible.builtin.tempfile:
+        state: directory
+        suffix: plan
+      register: temp_dir
+
     - name: "Terraform state: {{ requested_state }}"
       cloud.terraform.terraform:
         project_path: tf/aap-provider/
-        plan_file: aap-provider-plan
+        plan_file: "{{ temp_dir.path }}/aap-provider-plan"
         state: "{{ requested_state }}"
         force_init: true
         backend_config_files:

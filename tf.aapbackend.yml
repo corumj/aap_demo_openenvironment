@@ -2,7 +2,7 @@
 - name: Deploy resources via Terraform
   hosts: localhost
   tasks:
-    - name: Terraform apply
+    - name: "Terraform state: {{ requested_state }}"
       cloud.terraform.terraform:
         project_path: tf/aap-provider/
         state: "{{ requested_state }}"

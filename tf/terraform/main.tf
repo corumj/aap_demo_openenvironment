@@ -17,7 +17,7 @@ resource "aws_vpc" "aap_vpc" {
 }
 
 resource "aws_subnet" "aap_subnet" {
-  vpc_id            = aap_vpc.my_vpc.id
+  vpc_id            = aws_vpc.aap_vpc.id
   cidr_block        = "172.16.10.0/24"
   availability_zone = "us-west-2a"
 
@@ -27,7 +27,7 @@ resource "aws_subnet" "aap_subnet" {
 }
 
 resource "aws_network_interface" "foo" {
-  subnet_id   = aap_subnet.my_subnet.id
+  subnet_id   = aws_subnet.aap_subnet.id
   private_ips = ["172.16.10.100"]
 
   tags = {

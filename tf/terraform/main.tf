@@ -13,9 +13,9 @@ provider "aws" {
 }
 
 # Fetch the default VPC
-data "aws_vpc" "ansible-vpc" {
-  default = true
-}
+# data "aws_vpc" "ansible-vpc" {
+#   default = true
+# }
 
 resource "aws_instance" "tf-demo-aws-ec2-instance-1" {
   ami           = "ami-0005e0cfe09cc9050"
